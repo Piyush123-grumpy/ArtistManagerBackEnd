@@ -38,66 +38,76 @@ class PgDatabase(Database):
 
     def connect_to_database(self):
         return self.driver.connect(
-            host=os.getenv("DB_HOST"),
-            port=os.getenv("DB_PORT"),
-            user=os.getenv("DB_USERNAME"),
-            password=os.getenv("DB_PASSWORD"),
-            database=os.getenv("DB_NAME")
+            host=os.getenv("POSTGRES_SERVER"),
+            port=os.getenv("POSTGRES_PORT"),
+            user=os.getenv("POSTGRES_USER"),
+            password=os.getenv("POSTGRES_PASSWORD"),
+            database=os.getenv("POSTGRES_DB")
         )
     
-user='user'
+users='users'
 artist='artist'
 music='music'
+refreshToken='refresh_token'
 
 
 def create_tables():
     with PgDatabase() as db:
-        db.cursor.execute("""
-            CREATE TYPE gender AS ENUM ('m', 'f', '0');
-            CREATE TYPE genre AS ENUM ('rock', 'rnb', 'country', 'classic', 'jazz');
-            
-            CREATE TABLE users (
+        db.cursor.execute(f"""
+            CREATE TABLE {users} (
                 id SERIAL PRIMARY KEY,
-                first_name VARCHAR(255),
-                last_name VARCHAR(255),
-                email VARCHAR(255),
-                password VARCHAR(255),
-                phone VARCHAR(20),
-                dob DATE,
-                gender GENDER,
-                address VARCHAR(255),
+                first_name VARCHAR(255) NOT NULL,
+                last_name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                phone VARCHAR(20) UNIQUE NOT NULL,
+                dob DATE NOT NULL,
+                gender GENDER NOT NULL,
+                address VARCHAR(255) NOT NULL,
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()
             );
             
-            CREATE TABLE artist (
+            CREATE TABLE {artist} (
                 id SERIAL PRIMARY KEY,
-                name VARCHAR(255),
-                phone VARCHAR(20),
-                gender GENDER,
-                address VARCHAR(255),
-                no_of_albums_released INTEGER,
-                dob DATE,
+                name VARCHAR(255) NOT NULL,
+                phone VARCHAR(20) NOT NULL,
+                gender GENDER NOT NULL,
+                address VARCHAR(255) NOT NULL,
+                no_of_albums_released INTEGER NOT NULL,
+                dob DATE NOT NULL,
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()
             );
             
-            CREATE TABLE songs (
+            CREATE TABLE {music} (
                 id SERIAL PRIMARY KEY,
-                title VARCHAR(255),
-                duration INTEGER, -- Duration in seconds
-                genre GENRE,
-                release_date DATE,
+                title VARCHAR(255) NOT NULL,
+                duration INTEGER NOT NULL,
+                genre GENRE NOT NULL,
+                release_date DATE NOT NULL,
                 artist_id INTEGER REFERENCES artist(id) ON DELETE CASCADE,
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()
             );
+
+            CREATE TABLE {refreshToken} (
+                id SERIAL PRIMARY KEY,
+                refresh_token VARCHAR(255) NOT NULL,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+
         """)
         db.connection.commit()
         print("Tables are created successfully...")
 
 def drop_tables():
     with PgDatabase() as db:
-        db.cursor.execute(f"DROP TABLE IF EXISTS {user} CASCADE;")
+        db.cursor.execute(f"DROP TABLE IF EXISTS {users} CASCADE;")
+        db.cursor.execute(f"DROP TABLE IF EXISTS {artist} CASCADE;")
+        db.cursor.execute(f"DROP TABLE IF EXISTS {music} CASCADE;")
+        db.cursor.execute(f"DROP TABLE IF EXISTS {refreshToken} CASCADE;")
+
         db.connection.commit()
         print("Tables are dropped...")

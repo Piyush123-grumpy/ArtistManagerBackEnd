@@ -1,6 +1,8 @@
-from fastapi import FastAPI
-from src.auth.routers import login
+from fastapi import FastAPI,status 
+from fastapi.exceptions import HTTPException
+from src.auth.routers import login,register
 from fastapi.middleware.cors import CORSMiddleware
+from src.database import drop_tables, create_tables # new
 app = FastAPI()
 
 origins=[
@@ -18,7 +20,16 @@ app.add_middleware(
 )
 
 app.include_router(login.router)
+app.include_router(register.router)
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+@app.post('/initdb')
+async def initdb():
+    try:
+        drop_tables()
+        create_tables()
+        return {"message": "Tables dropped and created!"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Error {e}"
+        )
