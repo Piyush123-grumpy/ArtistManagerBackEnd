@@ -50,6 +50,8 @@ artist='artist'
 music='music'
 refreshToken='refresh_token'
 
+# CREATE TYPE gender AS ENUM ('m', 'f', '0');
+# CREATE TYPE genre AS ENUM ('rock', 'rnb', 'country', 'classic', 'jazz');
 
 def create_tables():
     with PgDatabase() as db:
@@ -71,7 +73,6 @@ def create_tables():
             CREATE TABLE {artist} (
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
-                phone VARCHAR(20) NOT NULL,
                 gender GENDER NOT NULL,
                 address VARCHAR(255) NOT NULL,
                 no_of_albums_released INTEGER NOT NULL,
@@ -83,9 +84,8 @@ def create_tables():
             CREATE TABLE {music} (
                 id SERIAL PRIMARY KEY,
                 title VARCHAR(255) NOT NULL,
-                duration INTEGER NOT NULL,
+                album_name VARCHAR(255) NOT NULL,
                 genre GENRE NOT NULL,
-                release_date DATE NOT NULL,
                 artist_id INTEGER REFERENCES artist(id) ON DELETE CASCADE,
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()
