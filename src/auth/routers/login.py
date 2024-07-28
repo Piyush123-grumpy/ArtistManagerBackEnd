@@ -28,7 +28,7 @@ PUBLIC_ALGORITHM = os.getenv('PUBLIC_ALGORITHM')
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token")
 
-ACCESS_TOKEN_EXPIRE_MINUTES=50
+ACCESS_TOKEN_EXPIRE_MINUTES=2629440 
 
 class Users(BaseModel):
     id: int
@@ -69,7 +69,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None, publ
 
 def create_refresh_token(data:dict):
     to_encode = data.copy()
-    expire = timedelta(minutes=60) + datetime.utcnow()
+    expire = timedelta(minutes=3155040 ) + datetime.utcnow()
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
