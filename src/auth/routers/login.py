@@ -28,7 +28,7 @@ PUBLIC_ALGORITHM = os.getenv('PUBLIC_ALGORITHM')
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token")
 
-ACCESS_TOKEN_EXPIRE_MINUTES=30 
+ACCESS_TOKEN_EXPIRE_MINUTES=1
 
 class Users(BaseModel):
     id: int
