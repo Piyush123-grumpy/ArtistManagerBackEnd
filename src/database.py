@@ -50,12 +50,16 @@ artist='artist'
 music='music'
 refreshToken='refresh_token'
 
+# Put these query at the initial time of building the tables
 # CREATE TYPE gender AS ENUM ('m', 'f', '0');
 # CREATE TYPE genre AS ENUM ('rock', 'rnb', 'country', 'classic', 'jazz');
 
 def create_tables():
     with PgDatabase() as db:
         db.cursor.execute(f"""
+            CREATE TYPE gender AS ENUM ('m', 'f', '0');
+            CREATE TYPE genre AS ENUM ('rock', 'rnb', 'country', 'classic', 'jazz');
+                          
             CREATE TABLE {users} (
                 id SERIAL PRIMARY KEY,
                 first_name VARCHAR(255) NOT NULL,
@@ -75,6 +79,7 @@ def create_tables():
                 name VARCHAR(255) NOT NULL,
                 gender GENDER NOT NULL,
                 address VARCHAR(255) NOT NULL,
+                first_release_year VARCHAR(255) NOT NULL,
                 no_of_albums_released INTEGER NOT NULL,
                 dob DATE NOT NULL,
                 created_at TIMESTAMP DEFAULT NOW(),

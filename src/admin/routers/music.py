@@ -1,8 +1,9 @@
-from fastapi import APIRouter,HTTPException,status
+from fastapi import APIRouter, Depends,HTTPException,status
 from psycopg2.errors import DatetimeFieldOverflow, OperationalError
 from src.database import PgDatabase
 from typing import Literal, Optional
 from datetime import datetime
+from src.auth.routers.login import oauth2_scheme,verify_token_access
 
 from pydantic import BaseModel
 
@@ -128,9 +129,11 @@ def delete_t_music_by_id(id: int):
     return False
 
 
-
+#Api endpoints for crud operation of the music 
 @router.get('/getMusic/{id}/{pageNumber}')
-def getMusic(id:int,pageNumber:int):
+def getMusic(id:int,pageNumber:int,token:str=Depends(oauth2_scheme)):
+    verify_token_access(token)
+
     try:
         count=len(count_t_music(id))
         totalCount=0
@@ -152,14 +155,16 @@ def getMusic(id:int,pageNumber:int):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"""Error {e}"""
         )
-    
 
 @router.post('/createMusic')
-def createMusic(musicData:Music):
+def createMusic(musicData:Music,token:str=Depends(oauth2_scheme)):
+    verify_token_access(token)
+
     return insert_t_music(musicData)
 
 @router.put('/updateMusicById/{id}/', status_code=status.HTTP_200_OK)
-async def update_music_by_id(payload: Music, id: int ):
+async def update_music_by_id(payload: Music, id: int,token:str=Depends(oauth2_scheme) ):
+    verify_token_access(token)
     result = update_t_music_by_id(id, payload)
     if not result:
         raise HTTPException(
@@ -168,7 +173,8 @@ async def update_music_by_id(payload: Music, id: int ):
 
     
 @router.get('/getMusicById/{id}')
-def getArtistById(id:int):
+def getArtistById(id:int,token:str=Depends(oauth2_scheme)):
+    verify_token_access(token)
     result = select_t_music_by_id(id)
     if not result:
         raise HTTPException(
@@ -176,7 +182,8 @@ def getArtistById(id:int):
     return result
 
 @router.delete('/deleteMusicById/{id}/')
-async def delete_music_by_id(id: int ):
+async def delete_music_by_id(id: int ,token:str=Depends(oauth2_scheme)):
+    verify_token_access(token)
     result = delete_t_music_by_id(id)
     if not result:
         raise HTTPException(

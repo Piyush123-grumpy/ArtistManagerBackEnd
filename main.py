@@ -1,5 +1,6 @@
 from fastapi import FastAPI,status 
 from fastapi.exceptions import HTTPException
+from src.admin.routers import users
 from src.auth.routers import login,register
 from src.admin.routers import artists,music
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,6 +25,7 @@ app.include_router(login.router)
 app.include_router(register.router)
 app.include_router(artists.router)
 app.include_router(music.router)
+app.include_router(users.router)
 
 @app.post('/initdb')
 async def initdb():

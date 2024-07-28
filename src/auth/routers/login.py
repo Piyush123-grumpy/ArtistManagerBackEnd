@@ -1,7 +1,9 @@
 import hashlib
-from fastapi import APIRouter,HTTPException,status
+from typing import Annotated
+from fastapi import APIRouter, Depends,HTTPException,status
 from datetime import datetime, timedelta, timezone
 from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 import os
 
@@ -24,7 +26,9 @@ ALGORITHM = os.getenv('ALGORITHM')
 PUBLIC_SECRET_KEY = os.getenv('PUBLIC_SECRET_KEY')
 PUBLIC_ALGORITHM = os.getenv('PUBLIC_ALGORITHM')
 
-ACCESS_TOKEN_EXPIRE_MINUTES=15
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token")
+
+ACCESS_TOKEN_EXPIRE_MINUTES=1
 
 class Users(BaseModel):
     id: int
@@ -80,13 +84,11 @@ def verify_token_access(token: str, public=False):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM]) if not public else jwt.decode(
             token, PUBLIC_SECRET_KEY, algorithms=[PUBLIC_ALGORITHM])
+        
         id: str = payload.get('id')
-        username: str = payload.get("sub")
-        userRole: str = payload.get('user_type')
-        if username is None:
-            raise credentials_exception
-        token_data = TokenData(username=username, id=id, userRole=userRole)
-    except JWTError:
+        token_data = TokenData(id=id)
+    except JWTError as e:
+        print(e)
         raise credentials_exception
     return token_data
 
@@ -101,12 +103,11 @@ def verify_refresh_token(token:str):
         payload = jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)
 
         id:str = payload.get("id")
-        username: str = payload.get("sub")
-        userRole: str = payload.get('user_type')
         if id is None:
             raise credential_exception
-        token_data = TokenData(id=id,username=username,userRole=userRole)
-    except JWTError:
+        token_data = TokenData(id=id)
+    except JWTError as e:
+        print('refresh',e)
         raise credential_exception
     return token_data
 
@@ -153,9 +154,7 @@ def login(data: Login):
     email = data.email.replace(" ", "")
     password = data.password.replace(" ", "")
     user = getUser(email)
-    # print(user)
     
-
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     userId=user[0]
@@ -238,7 +237,6 @@ def get_new_access_token(token:str):
         "user_id": token_data.id,
         "refresh_token": new_refresh_token,
     }
-
     try:
         add_refresh_token(refresh_token_dict)
     except Exception as e:
@@ -251,3 +249,48 @@ def get_new_access_token(token:str):
         "token_type":"Bearer",
         "status": status.HTTP_200_OK
     }
+
+
+
+
+
+#login for the api docs
+@router.post('/token')
+def login(data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+    email = data.username.replace(" ", "")
+    password = data.password.replace(" ", "")
+    user = getUser(email)
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    userId=user[0]
+    firstName=user[1]
+    lastName=user[2]
+    userEmail=user[3]
+    userPassword=user[4]
+    if not verify_password(userPassword, password, "Your Salt"):
+        raise HTTPException(status_code=404, detail="Incorrect password")
+    check_and_delete_refresh_token(userId)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={ "id": userId}, expires_delta=access_token_expires
+    )
+    refresh_token=create_refresh_token(data={"id": userId})
+    
+    refresh_token_dict = {
+        "user_id": userId,
+        "refresh_token": refresh_token,
+    }   
+    try:
+        add_refresh_token(refresh_token_dict)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    returnData={
+        'first_name':firstName,
+        'last_name':lastName,
+        'email':userEmail,
+        'id':userId
+
+    }
+    return Token(user=returnData, access_token=access_token,refresh_token=refresh_token, token_type="bearer")

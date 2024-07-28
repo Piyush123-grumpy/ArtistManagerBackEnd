@@ -48,7 +48,7 @@ def validate_password(password: str):
                 "type": "value_error",
                 "loc": [
                     "body",
-                    "new_password"
+                    "password"
                 ],
                 "msg": f"Value is not a valid password: The password is not valid. It must have {not_met_criteria[0]}",
                 "input": password,
@@ -118,7 +118,6 @@ def register_user(data:UserRegistration):
                            "detail": {
                                 "email":"User already exists with this email address"
                             }
-                        
                     }
                     )
                 insert_user(data)
