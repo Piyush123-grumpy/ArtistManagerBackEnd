@@ -51,15 +51,13 @@ music='music'
 refreshToken='refresh_token'
 
 # Put these query at the initial time of building the tables
-# CREATE TYPE gender AS ENUM ('m', 'f', '0');
-# CREATE TYPE genre AS ENUM ('rock', 'rnb', 'country', 'classic', 'jazz');
+
 
 def create_tables():
     with PgDatabase() as db:
         db.cursor.execute(f"""
             CREATE TYPE gender AS ENUM ('m', 'f', '0');
-            CREATE TYPE genre AS ENUM ('rock', 'rnb', 'country', 'classic', 'jazz');
-                          
+            CREATE TYPE genre AS ENUM ('rock', 'rnb', 'country', 'classic', 'jazz');  
             CREATE TABLE {users} (
                 id SERIAL PRIMARY KEY,
                 first_name VARCHAR(255) NOT NULL,
@@ -113,6 +111,7 @@ def drop_tables():
         db.cursor.execute(f"DROP TABLE IF EXISTS {artist} CASCADE;")
         db.cursor.execute(f"DROP TABLE IF EXISTS {music} CASCADE;")
         db.cursor.execute(f"DROP TABLE IF EXISTS {refreshToken} CASCADE;")
-
+        db.cursor.execute("DROP TYPE IF EXISTS gender;")
+        db.cursor.execute("DROP TYPE IF EXISTS genre;")
         db.connection.commit()
         print("Tables are dropped...")
