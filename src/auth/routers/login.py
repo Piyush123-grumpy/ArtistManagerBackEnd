@@ -51,6 +51,9 @@ class TokenData(BaseModel):
     id: int | None = None
     userRole: str | None = None
 
+
+# Utility functions for the routes/////////////////////////////////
+
 def verify_password(stored_password, provided_password, salt):
     password_hash = hashlib.sha256(
         (provided_password + salt).encode('utf-8')).hexdigest()
@@ -149,6 +152,50 @@ def add_refresh_token(refresh_token_dict: dict):
         inserted_id = db.cursor.fetchone()[0]
     return inserted_id
 
+
+def check_refresh_token(user_id: int):
+    with PgDatabase() as db:
+        db.cursor.execute(f"""
+        SELECT refresh_token FROM refresh_token WHERE user_id = '{user_id}';
+        """)
+        refresh_token = db.cursor.fetchone()
+        if refresh_token!=None:
+            return refresh_token
+        return None
+    
+
+def check_and_delete_refresh_token_for_refresh(user_id: int, provided_token: str):
+    with PgDatabase() as db:
+        # Check if the refresh token exists for the user
+        db.cursor.execute(f"""
+        SELECT refresh_token FROM refresh_token WHERE user_id = '{user_id}';
+        """)
+        result = db.cursor.fetchone()
+
+        if not result:
+            raise HTTPException(status_code=401, detail="No refresh token found for the user")
+
+        existing_token = result[0]
+
+        if existing_token != provided_token:
+            # Delete the existing token
+            db.cursor.execute(f"""
+            DELETE FROM refresh_token WHERE user_id = '{user_id}';
+            """)
+            db.connection.commit()
+
+            raise HTTPException(status_code=401, detail="Refresh tokens do not match")
+        else:
+            # Delete the existing token
+            db.cursor.execute(f"""
+            DELETE FROM refresh_token WHERE user_id = '{user_id}';
+            """)
+            db.connection.commit()
+    
+
+
+#Routes//////////////////////////////////////////////////////////////////////////////////////
+
 @router.post('/login')
 def login(data: Login):
     email = data.email.replace(" ", "")
@@ -189,43 +236,7 @@ def login(data: Login):
     }
     return Token(user=returnData, access_token=access_token,refresh_token=refresh_token, token_type="bearer")
 
-def check_refresh_token(user_id: int):
-    with PgDatabase() as db:
-        db.cursor.execute(f"""
-        SELECT refresh_token FROM refresh_token WHERE user_id = '{user_id}';
-        """)
-        refresh_token = db.cursor.fetchone()
-        if refresh_token!=None:
-            return refresh_token
-        return None
-    
-def check_and_delete_refresh_token_for_refresh(user_id: int, provided_token: str):
-    with PgDatabase() as db:
-        # Check if the refresh token exists for the user
-        db.cursor.execute(f"""
-        SELECT refresh_token FROM refresh_token WHERE user_id = '{user_id}';
-        """)
-        result = db.cursor.fetchone()
 
-        if not result:
-            raise HTTPException(status_code=401, detail="No refresh token found for the user")
-
-        existing_token = result[0]
-
-        if existing_token != provided_token:
-            # Delete the existing token
-            db.cursor.execute(f"""
-            DELETE FROM refresh_token WHERE user_id = '{user_id}';
-            """)
-            db.connection.commit()
-
-            raise HTTPException(status_code=401, detail="Refresh tokens do not match")
-        else:
-            # Delete the existing token
-            db.cursor.execute(f"""
-            DELETE FROM refresh_token WHERE user_id = '{user_id}';
-            """)
-            db.connection.commit()
             
 
 @router.get("/refresh", status_code=status.HTTP_200_OK)
@@ -253,9 +264,6 @@ def get_new_access_token(token:str):
         "token_type":"Bearer",
         "status": status.HTTP_200_OK
     }
-
-
-
 
 
 #login for the api docs

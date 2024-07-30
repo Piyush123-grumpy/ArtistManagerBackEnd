@@ -31,6 +31,7 @@ class UserRegistration(BaseModel):
     gender_select: Literal['m', 'f', 'o']  # 'm' for male, 'f' for female, 'o' for other
     date_time: datetime
 
+#Utility functions for routes////////////////////////////////////////////////
 
 def validate_password(password: str):
     not_met_criteria = []
@@ -99,6 +100,7 @@ def insert_user(payload: UserRegistration) -> dict:
     # Return the inserted user ID or any other required info
     return {"id": inserted_id}
     
+#Routes ////////////////////////////////////////////////
 
 @router.post('/register/',tags=['users'])
 def register_user(data:UserRegistration):
