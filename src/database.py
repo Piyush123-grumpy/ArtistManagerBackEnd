@@ -42,14 +42,14 @@ class PgDatabase(Database):
             raise ValueError("No DATABASE_URL set for PostgreSQL connection")
 
         # commented for live purposes
-        # return self.driver.connect(database_url)
-        return self.driver.connect(
-            host=os.getenv("POSTGRES_HOST"),
-            port=os.getenv("POSTGRES_PORT"),
-            user=os.getenv("POSTGRES_USER"),
-            password=os.getenv("POSTGRES_PASSWORD"),
-            database=os.getenv("POSTGRES_DB")
-        )
+        return self.driver.connect(database_url)
+        # return self.driver.connect(
+        #     host=os.getenv("POSTGRES_HOST"),
+        #     port=os.getenv("POSTGRES_PORT"),
+        #     user=os.getenv("POSTGRES_USER"),
+        #     password=os.getenv("POSTGRES_PASSWORD"),
+        #     database=os.getenv("POSTGRES_DB")
+        # )
     
 users='users'
 artist='artist'
