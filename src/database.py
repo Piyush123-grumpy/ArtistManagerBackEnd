@@ -44,7 +44,7 @@ class PgDatabase(Database):
         # commented for live purposes
         # return self.driver.connect(database_url)
         return self.driver.connect(
-            host=os.getenv("POSTGRES_SERVER"),
+            host=os.getenv("POSTGRES_HOST"),
             port=os.getenv("POSTGRES_PORT"),
             user=os.getenv("POSTGRES_USER"),
             password=os.getenv("POSTGRES_PASSWORD"),
