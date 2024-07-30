@@ -28,7 +28,7 @@ PUBLIC_ALGORITHM = os.getenv('PUBLIC_ALGORITHM')
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token")
 
-ACCESS_TOKEN_EXPIRE_MINUTES= 60
+ACCESS_TOKEN_EXPIRE_MINUTES= 30
 
 class Users(BaseModel):
     id: int
@@ -69,7 +69,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None, publ
 
 def create_refresh_token(data:dict):
     to_encode = data.copy()
-    expire = timedelta(minutes=80  ) + datetime.utcnow()
+    expire = timedelta(minutes=60 ) + datetime.utcnow()
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -217,20 +217,24 @@ def check_and_delete_refresh_token_for_refresh(user_id: int, provided_token: str
             db.cursor.execute(f"""
             DELETE FROM refresh_token WHERE user_id = '{user_id}';
             """)
+            db.connection.commit()
+
             raise HTTPException(status_code=401, detail="Refresh tokens do not match")
         else:
             # Delete the existing token
             db.cursor.execute(f"""
             DELETE FROM refresh_token WHERE user_id = '{user_id}';
             """)
+            db.connection.commit()
+            
 
 @router.get("/refresh", status_code=status.HTTP_200_OK)
 def get_new_access_token(token:str):
     token_data = verify_refresh_token(token)
     # refresh_token_check = db.query(RefreshToken).filter(RefreshToken.user_id == token_data.id)
     check_and_delete_refresh_token_for_refresh(token_data.id,token)
-
-    new_access_token= create_access_token({"id": token_data.id})
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    new_access_token= create_access_token({"id": token_data.id},expires_delta=access_token_expires)
     new_refresh_token=create_refresh_token(data={"id": token_data.id})
 
     refresh_token_dict = {
